@@ -1,6 +1,8 @@
+import datetime
 from datetime import date
 import requests
 import json
+import time
 from settings.linkedin import LinkedInConfig as settings
 from db.db import _write_to_sql as wrsql
 
@@ -13,7 +15,7 @@ class LinkedinService:
         eof = False
         API_URL = f'https://api.linkedin.com/v2/learningActivityReports?start={li.PAGE_START}&count={li.PAGE_COUNT}&' \
                   'aggregationCriteria.primary=INDIVIDUAL&' \
-                  'aggregationCriteria.secondary=CONTENT&q=criteria&start=0&contentSource=LINKEDIN_LEARNING&' \
+                  'aggregationCriteria.secondary=CONTENT&q=criteria&start=0&contentSource=ALL_SOURCES&' \
                   f'assetType={asset}&startedAt={li.MEASURE_PERIOD_START}&' \
                   f'timeOffset.duration={li.MEASURE_PERIOD_LOOKBACK}&timeOffset.unit={li.MEASURE_PERIOD}'
 
@@ -30,6 +32,12 @@ class LinkedinService:
                 elif 'lyndaLearningPath' in record['contentDetails']['contentUrn']:
                     content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
                         'contentUrn'].find('lyndaLearningPath:')) * -1
+                elif 'learningCustomContent' in record['contentDetails']['contentUrn']:
+                    content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
+                        'contentUrn'].find('learningCustomContent:')) * -1
+                elif 'Recommended Content for Learning Paths' in record['contentDetails']['name']:
+                    content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
+                        'contentUrn'].find('lyndaLearningCollection:')) * -1
                 content_id = record['contentDetails']['contentUrn'][content_id_idx:].replace(')', '')
                 asset_type = record['activities'][0]['assetType']
                 seconds_viewed = record['activities'][0]['engagementValue']
