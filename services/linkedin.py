@@ -17,7 +17,7 @@ class LinkedinService:
                   'aggregationCriteria.primary=INDIVIDUAL&' \
                   'aggregationCriteria.secondary=CONTENT&q=criteria&start=0&contentSource=ALL_SOURCES&' \
                   f'assetType={asset}&startedAt={li.MEASURE_PERIOD_START}&' \
-                  f'timeOffset.duration={li.MEASURE_PERIOD_LOOKBACK}&timeOffset.unit={li.MEASURE_PERIOD}'
+                  f'timeOffset.duration={li.MEASURE_PERIOD_LOOKAHEAD}&timeOffset.unit={li.MEASURE_PERIOD}'
 
         while not eof:
             r = requests.get(API_URL, headers=li.HEADERS).json()
