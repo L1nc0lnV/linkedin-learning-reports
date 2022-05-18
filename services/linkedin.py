@@ -1,11 +1,14 @@
-import datetime
 from datetime import date
 import requests
 import json
-import time
 from settings.linkedin import LinkedInConfig as settings
 from db.db import _write_to_sql as wrsql
 
+
+def GetLinkedinRefreshToken(li):
+    API_URL = f'https://www.linkedin.com/oauth/v2/accessToken?grant_type=client_credentials&client_id={li.CLIENTID}&' \
+              f'client_secret={li.CLIENT_SECRET}'
+    return requests.get(API_URL).json()['access_token']
 
 class LinkedinService:
     payload = []
@@ -19,6 +22,7 @@ class LinkedinService:
                   f'assetType={asset}&startedAt={li.MEASURE_PERIOD_START}&' \
                   f'timeOffset.duration={li.MEASURE_PERIOD_LOOKAHEAD}&timeOffset.unit={li.MEASURE_PERIOD}'
 
+        li.TOKEN = GetLinkedinRefreshToken(li)
         while not eof:
             r = requests.get(API_URL, headers=li.HEADERS).json()
             for record in r['elements']:
@@ -57,3 +61,6 @@ class LinkedinService:
                 eof = True
 
     wrsql(li.DBTABLE, json.dumps(payload))
+
+
+
