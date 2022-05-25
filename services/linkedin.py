@@ -4,12 +4,6 @@ import json
 from settings.linkedin import LinkedInConfig as settings
 from db.db import _write_to_sql as wrsql
 
-
-def GetLinkedinRefreshToken(li):
-    API_URL = f'https://www.linkedin.com/oauth/v2/accessToken?grant_type=client_credentials&client_id={li.CLIENTID}&' \
-              f'client_secret={li.CLIENT_SECRET}'
-    return requests.get(API_URL).json()['access_token']
-
 class LinkedinService:
     payload = []
     li = settings()
@@ -22,7 +16,6 @@ class LinkedinService:
                   f'assetType={asset}&startedAt={li.MEASURE_PERIOD_START}&' \
                   f'timeOffset.duration={li.MEASURE_PERIOD_LOOKAHEAD}&timeOffset.unit={li.MEASURE_PERIOD}'
 
-        li.TOKEN = GetLinkedinRefreshToken(li)
         while not eof:
             r = requests.get(API_URL, headers=li.HEADERS).json()
             for record in r['elements']:
@@ -45,7 +38,10 @@ class LinkedinService:
                 content_id = record['contentDetails']['contentUrn'][content_id_idx:].replace(')', '')
                 asset_type = record['activities'][0]['assetType']
                 seconds_viewed = record['activities'][0]['engagementValue']
-                progress_percentage = record['activities'][1]['engagementValue']
+                if len(record['activities']) < 2:
+                    progress_percentage = 0
+                else:
+                    progress_percentage = record['activities'][1]['engagementValue']
                 created_date = str(date.today())
                 record = {'uid': uid, 'email': email, 'content': content, 'content_id': content_id,
                           'asset_type': asset_type, 'seconds_viewed': seconds_viewed,
