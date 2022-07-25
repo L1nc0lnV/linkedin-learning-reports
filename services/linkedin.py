@@ -18,35 +18,38 @@ class LinkedinService:
 
         while not eof:
             r = requests.get(API_URL, headers=li.HEADERS).json()
-            for record in r['elements']:
-                email = record['learnerDetails']['email']
-                content = record['contentDetails']['name'].lstrip().replace('"', '')
-                uid = record['learnerDetails']['uniqueUserId']
-                content_id = record['contentDetails']['contentUrn'][-7:]
-                if 'lyndaCourse' in record['contentDetails']['contentUrn']:
-                    content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
-                        'contentUrn'].find('lyndaCourse:')) * -1
-                elif 'lyndaLearningPath' in record['contentDetails']['contentUrn']:
-                    content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
-                        'contentUrn'].find('lyndaLearningPath:')) * -1
-                elif 'learningCustomContent' in record['contentDetails']['contentUrn']:
-                    content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
-                        'contentUrn'].find('learningCustomContent:')) * -1
-                elif 'Recommended Content for Learning Paths' in record['contentDetails']['name']:
-                    content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
-                        'contentUrn'].find('lyndaLearningCollection:')) * -1
-                content_id = record['contentDetails']['contentUrn'][content_id_idx:].replace(')', '')
-                asset_type = record['activities'][0]['assetType']
-                seconds_viewed = record['activities'][0]['engagementValue']
-                if len(record['activities']) < 2:
-                    progress_percentage = 0
-                else:
-                    progress_percentage = record['activities'][1]['engagementValue']
-                created_date = str(date.today())
-                record = {'uid': uid, 'email': email, 'content': content, 'content_id': content_id,
-                          'asset_type': asset_type, 'seconds_viewed': seconds_viewed,
-                          'progress_percentage': progress_percentage, 'created_date': created_date}
-                payload.append(record)
+            if(len(r['elements']) != 0):
+                for record in r['elements']:
+                    email = record['learnerDetails']['email']
+                    content = record['contentDetails']['name'].lstrip().replace('"', '')
+                    uid = record['learnerDetails']['uniqueUserId']
+                    content_id = record['contentDetails']['contentUrn'][-7:]
+                    if 'lyndaCourse' in record['contentDetails']['contentUrn']:
+                        content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
+                            'contentUrn'].find('lyndaCourse:')) * -1
+                    elif 'lyndaLearningPath' in record['contentDetails']['contentUrn']:
+                        content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
+                            'contentUrn'].find('lyndaLearningPath:')) * -1
+                    elif 'learningCustomContent' in record['contentDetails']['contentUrn']:
+                        content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
+                            'contentUrn'].find('learningCustomContent:')) * -1
+                    elif 'Recommended Content for Learning Paths' in record['contentDetails']['name']:
+                        content_id_idx = (len(record['contentDetails']['contentUrn']) - record['contentDetails'][
+                            'contentUrn'].find('lyndaLearningCollection:')) * -1
+                    content_id = record['contentDetails']['contentUrn'][content_id_idx:].replace(')', '')
+                    asset_type = record['activities'][0]['assetType']
+                    seconds_viewed = record['activities'][0]['engagementValue']
+                    if len(record['activities']) < 2:
+                        progress_percentage = 0
+                    else:
+                        progress_percentage = record['activities'][1]['engagementValue']
+                    created_date = str(date.today())
+                    record = {'uid': uid, 'email': email, 'content': content, 'content_id': content_id,
+                              'asset_type': asset_type, 'seconds_viewed': seconds_viewed,
+                              'progress_percentage': progress_percentage, 'created_date': created_date}
+                    payload.append(record)
+            else:
+                print(f'No results found for that time period for type:{asset}')
             if len(r['paging']['links']) != 0:
                 for links in r['paging']['links']:
                     if links['rel'] == 'next':
@@ -56,7 +59,10 @@ class LinkedinService:
             else:
                 eof = True
 
-    wrsql(li.DBTABLE, json.dumps(payload))
+    if(len(payload) != 0):
+        wrsql(li.DBTABLE, json.dumps(payload))
+    else:
+        print(f'No data available for {li.MEASURE_PERIOD_START} + 1')
 
 
 
